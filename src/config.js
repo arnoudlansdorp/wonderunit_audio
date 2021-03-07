@@ -1,7 +1,7 @@
 const os = require('os')
 
 module.exports = {
-    listenIp: '52.201.225.159',
+    listenIp: '0.0.0.0',
     listenPort: 443,
     // sslCrt: '../ssl/cert.pem',
     // sslKey: '../ssl/key.pem',

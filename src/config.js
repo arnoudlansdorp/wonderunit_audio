@@ -2,7 +2,7 @@ const os = require('os')
 
 module.exports = {
     listenIp: '0.0.0.0',
-    listenPort: 80,
+    listenPort: 443,
     // sslCrt: '../ssl/cert.pem',
     // sslKey: '../ssl/key.pem',
     sslCrt: '../ssl/rootCA.pem',
@@ -55,7 +55,7 @@ module.exports = {
         listenIps: [
           {
             ip: '0.0.0.0',      
-            announcedIp:'172.31.49.129' // replace by public IP address
+            announcedIp:'52.201.225.159' // replace by public IP address
           }
         ],
         maxIncomingBitrate: 1500000,

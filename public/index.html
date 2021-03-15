@@ -59,6 +59,10 @@
         <button id='startAudioButton' class='hidden' onclick="rc.produce(RoomClient.mediaType.audio, audioSelect.value)">audio</button>
         <button id='stopAudioButton' class='hidden' onclick="rc.closeProducer(RoomClient.mediaType.audio)">close audio</button>
         
+
+        <button id='startRecordButton' class='hidden' onclick="rc.startRecord()">Start Record</button>
+        <button id='stopRecordButton' class='hidden' onclick="rc.closeProducer(RoomClient.mediaType.audio)">Stop Record</button>
+        
         <!-- <button id='startVideoButton' class='hidden' onclick="rc.produce(RoomClient.mediaType.video, videoSelect.value)">video</button>
         <button id='stopVideoButton' class='hidden' onclick="rc.closeProducer(RoomClient.mediaType.video)">close video</button>
         <button id='startScreenButton' class='hidden' onclick="rc.produce(RoomClient.mediaType.screen)">screen</button>

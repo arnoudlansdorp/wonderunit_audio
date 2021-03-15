@@ -78,6 +78,7 @@ function addListeners() {
   rc.on(RoomClient.EVENTS.startAudio, () => {
     hide(startAudioButton)
     reveal(stopAudioButton)
+    reveal(startRecordButton)
   })
 
   // rc.on(RoomClient.EVENTS.startVideo, () => {

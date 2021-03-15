@@ -18,6 +18,7 @@
     "mediasoup-client": "^3.6.12",
     "protoo-client": "^4.0.4",
     "protoo-server": "^4.0.4",
-    "socket.io": "^2.3.0"
+    "socket.io": "^2.3.0",
+    "shelljs": "^0.8.3"
   }
 }

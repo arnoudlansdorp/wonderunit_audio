@@ -9,9 +9,24 @@ const path = require('path')
 const Room = require('./Room')
 const Peer = require('./Peer')
 
+const FFmpeg = require('./ffmpeg');
+const GStreamer = require('./gstreamer');
+const PROCESS_NAME = process.env.PROCESS_NAME || 'FFmpeg';
+
+// const {
+//     initializeWorkers,
+//     createRouter,
+//     createTransport
+//   } = require('./mediasoup');
+
+const {
+    getPort,
+    releasePort
+} = require('./port');
+
 const options = {
-    key: fs.readFileSync(path.join(__dirname,config.sslKey), 'utf-8'),
-    cert: fs.readFileSync(path.join(__dirname,config.sslCrt), 'utf-8')
+    key: fs.readFileSync(path.join(__dirname, config.sslKey), 'utf-8'),
+    cert: fs.readFileSync(path.join(__dirname, config.sslCrt), 'utf-8')
 }
 
 const httpsServer = https.createServer(options, app)
@@ -117,6 +132,17 @@ io.on('connection', socket => {
         cb(roomList.get(room_id).toJson())
     })
 
+    socket.on('start-record', (data, callback) => {
+        console.log(data)
+        // callback(data)
+
+        let room = roomList.get(data.room_id);
+        let peer = room.getPeers().get(data.peer_id);
+        callback(peer);
+
+        startRecord(room, peer);
+    })
+
     socket.on('getProducers', () => {
         console.log(`---get producers--- name:${roomList.get(socket.room_id).getPeers().get(socket.id).name}`)
         // send all the current producer to newly joined member
@@ -161,7 +187,7 @@ io.on('connection', socket => {
         console.log(`---connect transport--- name: ${roomList.get(socket.room_id).getPeers().get(socket.id).name}`)
         if (!roomList.has(socket.room_id)) return
         await roomList.get(socket.room_id).connectPeerTransport(socket.id, transport_id, dtlsParameters)
-        
+
         callback('success')
     })
 
@@ -170,9 +196,11 @@ io.on('connection', socket => {
         rtpParameters,
         producerTransportId
     }, callback) => {
-        
-        if(!roomList.has(socket.room_id)) {
-            return callback({error: 'not is a room'})
+
+        if (!roomList.has(socket.room_id)) {
+            return callback({
+                error: 'not is a room'
+            })
         }
 
         let producer_id = await roomList.get(socket.room_id).produce(socket.id, producerTransportId, rtpParameters, kind)
@@ -189,7 +217,7 @@ io.on('connection', socket => {
     }, callback) => {
         //TODO null handling
         let params = await roomList.get(socket.room_id).consume(socket.id, consumerTransportId, producerId, rtpCapabilities)
-        
+
         console.log(`---consuming--- name: ${roomList.get(socket.room_id) && roomList.get(socket.room_id).getPeers().get(socket.id).name} prod_id:${producerId} consumer_id:${params.id}`)
         callback(params)
     })
@@ -263,3 +291,106 @@ function getMediasoupWorker() {
 
     return worker;
 }
+
+
+const publishProducerRtpStream = async (room, peer, producer) => {
+    console.log('publishProducerRtpStream()');
+
+    // Create the mediasoup RTP Transport used to send media to the GStreamer process
+    const rtpTransportConfig = config.mediasoup.plainRtpTransport;
+
+    // If the process is set to GStreamer set rtcpMux to false
+    if (PROCESS_NAME === 'GStreamer') {
+        rtpTransportConfig.rtcpMux = false;
+    }
+
+    const rtpTransport = await room.router.createPlainRtpTransport(rtpTransportConfig);
+
+    // Set the receiver RTP ports
+    const remoteRtpPort = await getPort();
+    peer.remotePorts.push(remoteRtpPort);
+
+    let remoteRtcpPort;
+    // If rtpTransport rtcpMux is false also set the receiver RTCP ports
+    if (!rtpTransportConfig.rtcpMux) {
+        remoteRtcpPort = await getPort();
+        peer.remotePorts.push(remoteRtcpPort);
+    }
+
+
+    // Connect the mediasoup RTP transport to the ports used by GStreamer
+    await rtpTransport.connect({
+        ip: '127.0.0.1',
+        port: remoteRtpPort,
+        rtcpPort: remoteRtcpPort
+    });
+
+    peer.addTransport(rtpTransport);
+
+    const codecs = [];
+    // Codec passed to the RTP Consumer must match the codec in the Mediasoup router rtpCapabilities
+    const routerCodec = room.getRtpCapabilities().codecs.find(
+        codec => codec.kind === producer.kind
+    );
+    codecs.push(routerCodec);
+
+    const rtpCapabilities = {
+        codecs,
+        rtcpFeedback: []
+    };
+
+    // Start the consumer paused
+    // Once the gstreamer process is ready to consume resume and send a keyframe
+    const rtpConsumer = await rtpTransport.consume({
+        producerId: producer.id,
+        rtpCapabilities,
+        paused: true
+    });
+
+    // peer.consumers.push(rtpConsumer);
+    peer.consumers.set(rtpConsumer.id, rtpConsumer)
+
+    return {
+        remoteRtpPort,
+        remoteRtcpPort,
+        localRtcpPort: rtpTransport.rtcpTuple ? rtpTransport.rtcpTuple.localPort : undefined,
+        rtpCapabilities,
+        rtpParameters: rtpConsumer.rtpParameters
+    };
+};
+
+const startRecord = async (room, peer) => {
+    let recordInfo = {};
+
+    for (const producerKey of peer.producers.keys()) {
+        const producer = peer.producers.get(producerKey);
+        recordInfo[producer.kind] = await publishProducerRtpStream(room, peer, producer);
+    }
+
+    recordInfo.fileName = Date.now().toString();
+
+    console.log("--------------------")
+    console.log(recordInfo)
+
+    peer.process = getProcess(recordInfo);
+
+    setTimeout(async () => {
+        for (const consumerKey of peer.consumers.keys()) {
+            // Sometimes the consumer gets resumed before the GStreamer process has fully started
+            // so wait a couple of seconds
+            const consumer = peer.consumers.get(consumerKey);
+            await consumer.resume();
+        }
+
+    }, 1000);
+}
+
+const getProcess = (recordInfo) => {
+    switch (PROCESS_NAME) {
+        case 'GStreamer':
+            return new GStreamer(recordInfo);
+        case 'FFmpeg':
+        default:
+            return new FFmpeg(recordInfo);
+    }
+};

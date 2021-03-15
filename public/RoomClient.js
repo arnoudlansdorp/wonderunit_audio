@@ -11,7 +11,10 @@ const _EVENTS = {
     startAudio: 'startAudio',
     stopAudio: 'stopAudio',
     startScreen: 'startScreen',
-    stopScreen: 'stopScreen'
+    stopScreen: 'stopScreen',
+
+    startRecord: 'startRecord',
+    stopRecord: 'stopRecord'
 }
 
 class RoomClient {
@@ -579,6 +582,23 @@ class RoomClient {
 
         this.event(_EVENTS.exitRoom)
 
+    }
+
+    startRecord() {
+        console.log(this.socket.id)
+        let peer_id = this.socket.id;
+        let room_id = this.room_id
+        let transport_id = this.producerTransport.id
+
+        socket.request('start-record', {
+            peer_id,
+            room_id,
+            transport_id
+        }).then(async function (e) {
+            console.log(e)
+        }.bind(this)).catch(e => {
+            console.log(e)
+        })
     }
 
     ///////  HELPERS //////////

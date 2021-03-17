@@ -3,10 +3,10 @@ const os = require('os')
 module.exports = {
     listenIp: '0.0.0.0',
     listenPort: 3016,
-    sslCrt: '../ssl/cert.pem',
-    sslKey: '../ssl/key.pem',
-    // sslCrt: '../ssl/rootCA.pem',
-    // sslKey: '../ssl/rootCA-key.pem',
+    // sslCrt: '../ssl/cert.pem',
+    // sslKey: '../ssl/key.pem',
+    sslCrt: '../ssl/rootCA.pem',
+    sslKey: '../ssl/rootCA-key.pem',
     
     mediasoup: {
       // Worker settings
@@ -55,7 +55,7 @@ module.exports = {
         listenIps: [
           {
             ip: '0.0.0.0',      
-            announcedIp:'127.0.0.1' // replace by public IP address
+            announcedIp:'52.201.225.159' // replace by public IP address
           }
         ],
         maxIncomingBitrate: 1500000,
@@ -63,7 +63,7 @@ module.exports = {
     },
 
     plainRtpTransport: {
-      listenIp: { ip: '0.0.0.0', announcedIp: '0.0.0.0' }, // TODO: Change announcedIp to your external IP or domain name
+      listenIp: { ip: '0.0.0.0', announcedIp: '52.201.225.159' }, // TODO: Change announcedIp to your external IP or domain name
       rtcpMux: false,
       comedia: false
     },

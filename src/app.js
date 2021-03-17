@@ -11,7 +11,7 @@ const Peer = require('./Peer')
 
 const FFmpeg = require('./ffmpeg');
 const GStreamer = require('./gstreamer');
-const PROCESS_NAME = process.env.PROCESS_NAME || 'FFmpeg';
+const PROCESS_NAME = process.env.PROCESS_NAME || 'GStreamer';
 
 // const {
 //     initializeWorkers,

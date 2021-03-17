@@ -5,7 +5,7 @@ module.exports.createSdpText = (rtpParameters) => {
   const { video, audio } = rtpParameters;
   
   // Video codec info
-  const videoCodecInfo = getCodecInfoFromRtpParameters('video', video.rtpParameters);
+  // const videoCodecInfo = getCodecInfoFromRtpParameters('video', video.rtpParameters);
 
   // Audio codec info
   const audioCodecInfo = getCodecInfoFromRtpParameters('audio', audio.rtpParameters);

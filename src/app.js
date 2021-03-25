@@ -133,15 +133,21 @@ io.on('connection', socket => {
     })
 
     socket.on('start-record', (data, callback) => {
-        console.log(data)
-        // callback(data)
-
         let room = roomList.get(data.room_id);
         let peer = room.getPeers().get(data.peer_id);
         callback(peer);
 
         startRecord(room, peer);
     })
+
+    socket.on('stop-record', async (data, callback) => {
+        let room = roomList.get(data.room_id);
+        let peer = room.getPeers().get(data.peer_id);
+        
+        await stopRecord(peer);
+        
+        callback(peer);
+    });
 
     socket.on('getProducers', () => {
         console.log(`---get producers--- name:${roomList.get(socket.room_id).getPeers().get(socket.id).name}`)
@@ -369,9 +375,6 @@ const startRecord = async (room, peer) => {
 
     recordInfo.fileName = Date.now().toString();
 
-    console.log("--------------------")
-    console.log(recordInfo)
-
     peer.process = getProcess(recordInfo);
 
     setTimeout(async () => {
@@ -385,6 +388,18 @@ const startRecord = async (room, peer) => {
     }, 1000);
 }
 
+const stopRecord = async (peer) => {
+    console.log(peer)
+    if (peer && peer.process) {
+        peer.process.kill();
+        peer.process = undefined;
+    }
+
+    for (const remotePort of peer.remotePorts) {
+        releasePort(remotePort);
+    }
+}
+
 const getProcess = (recordInfo) => {
     switch (PROCESS_NAME) {
         case 'GStreamer':
@@ -394,3 +409,17 @@ const getProcess = (recordInfo) => {
             return new FFmpeg(recordInfo);
     }
 };
+
+
+app.get('/allrecords', function(req, res) {
+    let records = [];
+    fs.readdir('./public/files', (err, files) => {
+        files.forEach(file => {
+            console.log(file)
+            records.push(
+                {'record': '/files/' + file, 'name': file}
+            )
+        })
+        res.json(records);
+    })
+})

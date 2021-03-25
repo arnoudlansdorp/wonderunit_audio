@@ -40,13 +40,9 @@ function roomOpen() {
   login.className = 'hidden'
   reveal(startAudioButton)
   hide(stopAudioButton)
-  // reveal(startVideoButton)
-  // hide(stopVideoButton)
-  // reveal(startScreenButton)
-  // hide(stopScreenButton)
-  // reveal(exitButton)
   control.className = ''
-  // reveal(videoMedia)
+  reveal(viewRecordsButton)
+  
 }
 
 function hide(elem) {
@@ -59,17 +55,6 @@ function reveal(elem) {
 
 
 function addListeners() {
-  // rc.on(RoomClient.EVENTS.startScreen, () => {
-  //   hide(startScreenButton)
-  //   reveal(stopScreenButton)
-  // })
-
-  // rc.on(RoomClient.EVENTS.stopScreen, () => {
-  //   hide(stopScreenButton)
-  //   reveal(startScreenButton)
-
-  // })
-
   rc.on(RoomClient.EVENTS.stopAudio, () => {
     hide(stopAudioButton)
     reveal(startAudioButton)
@@ -81,18 +66,19 @@ function addListeners() {
     reveal(startRecordButton)
   })
 
-  // rc.on(RoomClient.EVENTS.startVideo, () => {
-  //   hide(startVideoButton)
-  //   reveal(stopVideoButton)
-  // })
-  // rc.on(RoomClient.EVENTS.stopVideo, () => {
-  //   hide(stopVideoButton)
-  //   reveal(startVideoButton)
-  // })
   rc.on(RoomClient.EVENTS.exitRoom, () => {
     hide(control)
     reveal(login)
-    // hide(videoMedia)
+  })
+
+  rc.on(RoomClient.EVENTS.startRecord, () => {
+    reveal(stopRecordButton)
+    hide(startRecordButton)
+  })
+
+  rc.on(RoomClient.EVENTS.stopRecord, () => {
+    hide(stopRecordButton)
+    reveal(startRecordButton)
   })
 }
 

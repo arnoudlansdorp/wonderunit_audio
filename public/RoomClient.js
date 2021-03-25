@@ -596,6 +596,23 @@ class RoomClient {
             transport_id
         }).then(async function (e) {
             console.log(e)
+            this.event(_EVENTS.startRecord)
+        }.bind(this)).catch(e => {
+            console.log(e)
+        })
+    }
+
+    stopRecord() {
+        console.log(this.socket.id)
+        let peer_id = this.socket.id;
+        let room_id = this.room_id
+
+        socket.request('stop-record', {
+            peer_id,
+            room_id,
+        }).then(async function (e) {
+            console.log(e)
+            this.event(_EVENTS.stopRecord)
         }.bind(this)).catch(e => {
             console.log(e)
         })

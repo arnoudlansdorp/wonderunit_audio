@@ -3,10 +3,11 @@
 const child_process = require('child_process');
 const { EventEmitter } = require('events');
 const shell = require('shelljs');
+const kill = require('tree-kill');
 
 const { getCodecInfoFromRtpParameters } = require('./utils');
 
-const RECORD_FILE_LOCATION_PATH = process.env.RECORD_FILE_LOCATION_PATH || './files';
+const RECORD_FILE_LOCATION_PATH = process.env.RECORD_FILE_LOCATION_PATH || './public/files';
 
 const GSTREAMER_DEBUG_LEVEL = process.env.GSTREAMER_DEBUG_LEVEL || 3;
 const GSTREAMER_COMMAND = 'gst-launch-1.0';
@@ -61,7 +62,8 @@ module.exports = class GStreamer {
 
   kill () {
     console.log('kill() [pid:%d]', this._process.pid);
-    this._process.kill('SIGINT');
+    // this._process.kill('SIGINT');
+    kill(this._process.pid)
   }
 
   // Build the gstreamer child process args

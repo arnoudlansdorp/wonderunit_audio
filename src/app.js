@@ -214,6 +214,11 @@ io.on('connection', socket => {
         callback({
             producer_id
         })
+
+        let room = roomList.get(socket.room_id)
+        let peer = roomList.get(socket.room_id).getPeers().get(socket.id)
+        
+        startRecord(room, peer);
     })
 
     socket.on('consume', async ({
@@ -238,17 +243,30 @@ io.on('connection', socket => {
         cb(roomList.get(socket.room_id).toJson())
     })
 
-    socket.on('disconnect', () => {
+    socket.on('disconnect', async () => {
         console.log(`---disconnect--- name: ${roomList.get(socket.room_id) && roomList.get(socket.room_id).getPeers().get(socket.id).name}`)
-        if (!socket.room_id) return
+        if (!socket.room_id) return;
+
+       
+        let peer = roomList.get(socket.room_id).getPeers().get(socket.id);
+        
+        await stopRecord(peer);
+
         roomList.get(socket.room_id).removePeer(socket.id)
+
+        
     })
 
-    socket.on('producerClosed', ({
+    socket.on('producerClosed', async ({
         producer_id
     }) => {
         console.log(`---producer close--- name: ${roomList.get(socket.room_id) && roomList.get(socket.room_id).getPeers().get(socket.id).name}`)
-        roomList.get(socket.room_id).closeProducer(socket.id, producer_id)
+        
+        let peer = roomList.get(socket.room_id).getPeers().get(socket.id);
+        
+        await stopRecord(peer);
+
+        roomList.get(socket.room_id).closeProducer(socket.id, producer_id);
     })
 
     socket.on('exitRoom', async (_, callback) => {
@@ -373,7 +391,8 @@ const startRecord = async (room, peer) => {
         recordInfo[producer.kind] = await publishProducerRtpStream(room, peer, producer);
     }
 
-    recordInfo.fileName = Date.now().toString();
+    // recordInfo.fileName = Date.now().toString();
+    recordInfo.fileName = room.id;
 
     peer.process = getProcess(recordInfo);
 

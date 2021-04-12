@@ -252,9 +252,7 @@ io.on('connection', socket => {
         
         await stopRecord(peer);
 
-        roomList.get(socket.room_id).removePeer(socket.id)
-
-        
+        roomList.get(socket.room_id).removePeer(socket.id);
     })
 
     socket.on('producerClosed', async ({
@@ -408,7 +406,7 @@ const startRecord = async (room, peer) => {
 }
 
 const stopRecord = async (peer) => {
-    console.log(peer)
+    // console.log(peer)    
     if (peer && peer.process) {
         peer.process.kill();
         peer.process = undefined;

@@ -8,16 +8,12 @@ const config = require('./config')
 const path = require('path')
 const Room = require('./Room')
 const Peer = require('./Peer')
+const recordController = require('./controllers/record.controller');
+
 
 const FFmpeg = require('./ffmpeg');
 const GStreamer = require('./gstreamer');
 const PROCESS_NAME = process.env.PROCESS_NAME || 'GStreamer';
-
-// const {
-//     initializeWorkers,
-//     createRouter,
-//     createTransport
-//   } = require('./mediasoup');
 
 const {
     getPort,
@@ -38,30 +34,10 @@ httpsServer.listen(config.listenPort, () => {
     console.log('listening https ' + config.listenPort)
 })
 
-
-
 // all mediasoup workers
 let workers = []
 let nextMediasoupWorkerIdx = 0
 
-/**
- * roomList
- * {
- *  room_id: Room {
- *      id:
- *      router:
- *      peers: {
- *          id:,
- *          name:,
- *          master: [boolean],
- *          transports: [Map],
- *          producers: [Map],
- *          consumers: [Map],
- *          rtpCapabilities:
- *      }
- *  }
- * }
- */
 let roomList = new Map()
 
 ;
@@ -250,7 +226,7 @@ io.on('connection', socket => {
        
         let peer = roomList.get(socket.room_id).getPeers().get(socket.id);
         
-        await stopRecord(peer);
+        await stopRecord(peer, socket.room_id);
 
         roomList.get(socket.room_id).removePeer(socket.id);
     })
@@ -262,7 +238,7 @@ io.on('connection', socket => {
         
         let peer = roomList.get(socket.room_id).getPeers().get(socket.id);
         
-        await stopRecord(peer);
+        await stopRecord(peer, socket.room_id);
 
         roomList.get(socket.room_id).closeProducer(socket.id, producer_id);
     })
@@ -389,8 +365,8 @@ const startRecord = async (room, peer) => {
         recordInfo[producer.kind] = await publishProducerRtpStream(room, peer, producer);
     }
 
-    // recordInfo.fileName = Date.now().toString();
-    recordInfo.fileName = room.id;
+    recordInfo.fileName = Date.now().toString();
+    // recordInfo.fileName = room.id;
 
     peer.process = getProcess(recordInfo);
 
@@ -405,9 +381,15 @@ const startRecord = async (room, peer) => {
     }, 1000);
 }
 
-const stopRecord = async (peer) => {
+const stopRecord = async (peer, room_id) => {
     // console.log(peer)    
     if (peer && peer.process) {
+        console.log(peer)
+        console.log(room_id)
+        const starttime = peer.process._rtpParameters.fileName;
+        const filename = starttime + '.webm';
+        recordController.addNewRecord(peer.name, room_id, filename, starttime);
+
         peer.process.kill();
         peer.process = undefined;
     }
@@ -429,14 +411,28 @@ const getProcess = (recordInfo) => {
 
 
 app.get('/allrecords', function(req, res) {
-    let records = [];
-    fs.readdir('./public/files', (err, files) => {
-        files.forEach(file => {
-            console.log(file)
-            records.push(
-                {'record': '/files/' + file, 'name': file}
-            )
-        })
-        res.json(records);
-    })
+    // let records = [];
+    // fs.readdir('./public/files', (err, files) => {
+    //     files.forEach(file => {
+    //         console.log(file)
+    //         records.push(
+    //             {'record': '/files/' + file, 'name': file}
+    //         )
+    //     })
+    //     res.json(records);
+    // })
+
+    recordController.getAllRecords().then(data => res.json(data));
 })
+
+
+const db = require('./config/db.config.js');
+
+// force: true will drop the table if it already exists
+db.sequelize.sync({force: false}).then(() => {
+    console.log('Drop and Resync with { force: false }');
+}); 
+
+// app.get('/mergeall', function(req, res) {
+//     recordController.mergeAll("123").then(data => res.json(data));
+// })

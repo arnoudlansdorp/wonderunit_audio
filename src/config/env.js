@@ -6,7 +6,8 @@ const env = {
   database: 'wonderunit',
   username: 'postgres',
   password: 'password',
-  host: 'localhost',
+  // host: 'localhost',
+  host: 'database-1.c9prvctpzevg.us-east-1.rds.amazonaws.com',
   dialect: 'postgres',
   pool: {
     max: 5,

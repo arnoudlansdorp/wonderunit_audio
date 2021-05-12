@@ -433,6 +433,6 @@ db.sequelize.sync({force: false}).then(() => {
     console.log('Drop and Resync with { force: false }');
 }); 
 
-// app.get('/mergeall', function(req, res) {
-//     recordController.mergeAll("123").then(data => res.json(data));
-// })
+app.get('/mergeall', function(req, res) {
+    recordController.mergeAll("123").then(data => res.json(data));
+})
